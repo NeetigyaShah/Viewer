@@ -1,5 +1,5 @@
 import { WebSocketServer } from 'ws';
-import { spawn } from 'child_process';
+import pty from 'node-pty';
 import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
@@ -12,7 +12,7 @@ if (!existsSync(SESSIONS_DIR)) {
 }
 
 const wss = new WebSocketServer({ port: PORT });
-console.log(`[PTY Bridge Server] Running on ws://127.0.0.1:${PORT}`);
+console.log(`[PTY ConPTY Server] Running on ws://127.0.0.1:${PORT}`);
 console.log(`[Session Store] Sessions directory: ${SESSIONS_DIR}`);
 
 const activeProcesses = new Map();
@@ -22,28 +22,32 @@ function scanInstalledAgents() {
   const pathDirs = (process.env.PATH || '').split(isWin ? ';' : ':');
 
   const known = [
-    { id: 'claude', name: 'Claude Code CLI', command: isWin ? 'claude.cmd' : 'claude', fallback: 'claude', description: "Anthropic's official agentic coding CLI" },
-    { id: 'codex', name: 'Codex CLI', command: isWin ? 'codex.cmd' : 'codex', fallback: 'codex', description: "OpenAI Codex CLI coding assistant" },
-    { id: 'omp', name: 'Oh My Pi (OMP)', command: isWin ? 'omp.cmd' : 'omp', fallback: 'omp', description: "Multi-agent coding harness & tool orchestrator" },
-    { id: 'hermes', name: 'Hermes Agent', command: isWin ? 'hermes.cmd' : 'hermes', fallback: 'hermes', description: "Autonomous terminal coding agent" },
-    { id: 'aider', name: 'Aider', command: isWin ? 'aider.exe' : 'aider', fallback: 'aider', description: "AI pair programming in your terminal" },
-    { id: 'powershell', name: 'PowerShell', command: 'powershell.exe', fallback: 'powershell.exe', description: "Windows PowerShell terminal shell" },
-    { id: 'bash', name: 'Bash / Git Bash', command: isWin ? 'bash.exe' : 'bash', fallback: 'bash', description: "Unix Bash shell / WSL environment" }
+    { id: 'omp', name: 'Oh My Pi (OMP)', command: 'omp', isWinCmd: 'omp.cmd', description: "Multi-agent coding harness & tool orchestrator" },
+    { id: 'claude', name: 'Claude Code CLI', command: 'claude', isWinCmd: 'claude.cmd', description: "Anthropic's official agentic coding CLI" },
+    { id: 'codex', name: 'Codex CLI', command: 'codex', isWinCmd: 'codex.cmd', description: "OpenAI Codex CLI coding assistant" },
+    { id: 'hermes', name: 'Hermes Agent', command: 'hermes', isWinCmd: 'hermes.cmd', description: "Autonomous terminal coding agent" },
+    { id: 'aider', name: 'Aider', command: 'aider', isWinCmd: 'aider.exe', description: "AI pair programming in your terminal" },
+    { id: 'powershell', name: 'PowerShell', command: 'powershell.exe', isWinCmd: 'powershell.exe', description: "Windows PowerShell terminal shell" },
+    { id: 'bash', name: 'Bash / Git Bash', command: 'bash.exe', isWinCmd: 'bash.exe', description: "Unix Bash shell / WSL environment" }
   ];
 
   return known.map(agent => {
     let resolvedPath = null;
+    const targetBinary = isWin ? agent.isWinCmd : agent.command;
+
     for (const dir of pathDirs) {
-      const full = join(dir, agent.command);
+      const full = join(dir, targetBinary);
       if (existsSync(full)) {
         resolvedPath = full;
         break;
       }
     }
+
     return {
       id: agent.id,
       name: agent.name,
-      command: resolvedPath ? agent.command : agent.fallback,
+      command: agent.command,
+      binary: resolvedPath || (isWin ? agent.isWinCmd : agent.command),
       path: resolvedPath,
       is_installed: !!resolvedPath,
       description: agent.description
@@ -64,7 +68,7 @@ function listSavedSessions() {
 }
 
 wss.on('connection', (ws) => {
-  console.log('[PTY Bridge] Client connected');
+  console.log('[PTY ConPTY Bridge] Client connected');
 
   ws.on('message', (message) => {
     try {
@@ -84,47 +88,68 @@ wss.on('connection', (ws) => {
       }
 
       if (type === 'SAVE_SESSION') {
-        const { id, title, agentId, cwd, rawText, timestamp } = payload;
+        const { id } = payload;
         const filePath = join(SESSIONS_DIR, `${id}.json`);
         writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf-8');
         return;
       }
 
       if (type === 'SPAWN_PTY') {
-        const { command, args = [], cwd = process.cwd() } = payload;
-        console.log(`[PTY Spawn] Session ${sessionId}: ${command} in ${cwd}`);
+        const { command, args = [], cwd = process.cwd(), cols = 120, rows = 32 } = payload;
+        console.log(`[ConPTY Spawn] Session ${sessionId}: ${command} in ${cwd} (${cols}x${rows})`);
 
-        const child = spawn(command, args, {
-          cwd,
-          shell: true,
-          env: { ...process.env, FORCE_COLOR: '3', TERM: 'xterm-256color' }
+        const isWin = process.platform === 'win32';
+        let shellExecutable = command;
+        let shellArgs = args;
+
+        // On Windows, resolve .cmd / shell wrappers properly with ConPTY
+        if (isWin) {
+          if (command === 'powershell' || command === 'powershell.exe') {
+            shellExecutable = 'powershell.exe';
+            shellArgs = ['-NoLogo'];
+          } else if (command === 'cmd' || command === 'cmd.exe') {
+            shellExecutable = 'cmd.exe';
+            shellArgs = [];
+          } else if (command === 'bash' || command === 'bash.exe') {
+            shellExecutable = 'bash.exe';
+            shellArgs = [];
+          } else {
+            // For OMP, Claude, Codex, run inside cmd.exe /c with ConPTY
+            shellExecutable = 'cmd.exe';
+            shellArgs = ['/c', command, ...args];
+          }
+        }
+
+        const ptyProcess = pty.spawn(shellExecutable, shellArgs, {
+          name: 'xterm-256color',
+          cols: cols || 120,
+          rows: rows || 32,
+          cwd: cwd || process.cwd(),
+          env: {
+            ...process.env,
+            FORCE_COLOR: '3',
+            TERM: 'xterm-256color',
+            COLORTERM: 'truecolor',
+          },
         });
 
-        activeProcesses.set(sessionId, child);
+        activeProcesses.set(sessionId, ptyProcess);
 
-        child.stdout.on('data', (chunk) => {
+        ptyProcess.onData((chunk) => {
           ws.send(JSON.stringify({
             type: 'PTY_OUTPUT',
             sessionId,
-            payload: chunk.toString('utf-8')
+            payload: chunk,
           }));
         });
 
-        child.stderr.on('data', (chunk) => {
-          ws.send(JSON.stringify({
-            type: 'PTY_OUTPUT',
-            sessionId,
-            payload: chunk.toString('utf-8')
-          }));
-        });
-
-        child.on('close', (code) => {
-          console.log(`[PTY Exit] Session ${sessionId} exited with code ${code}`);
+        ptyProcess.onExit(({ exitCode }) => {
+          console.log(`[ConPTY Exit] Session ${sessionId} exited with code ${exitCode}`);
           activeProcesses.delete(sessionId);
           ws.send(JSON.stringify({
             type: 'PTY_EXIT',
             sessionId,
-            payload: { exitCode: code }
+            payload: { exitCode },
           }));
         });
 
@@ -132,27 +157,40 @@ wss.on('connection', (ws) => {
       }
 
       if (type === 'WRITE_PTY') {
-        const child = activeProcesses.get(sessionId);
-        if (child && child.stdin) {
-          child.stdin.write(payload);
+        const ptyProcess = activeProcesses.get(sessionId);
+        if (ptyProcess) {
+          ptyProcess.write(payload);
+        }
+        return;
+      }
+
+      if (type === 'RESIZE_PTY') {
+        const ptyProcess = activeProcesses.get(sessionId);
+        const { cols, rows } = payload || {};
+        if (ptyProcess && cols && rows) {
+          try {
+            ptyProcess.resize(cols, rows);
+          } catch {
+            // ignore resize error on closed process
+          }
         }
         return;
       }
 
       if (type === 'KILL_PTY') {
-        const child = activeProcesses.get(sessionId);
-        if (child) {
-          child.kill();
+        const ptyProcess = activeProcesses.get(sessionId);
+        if (ptyProcess) {
+          ptyProcess.kill();
           activeProcesses.delete(sessionId);
         }
         return;
       }
     } catch (err) {
-      console.error('[PTY Bridge Error]', err);
+      console.error('[PTY ConPTY Bridge Error]', err);
     }
   });
 
   ws.on('close', () => {
-    console.log('[PTY Bridge] Client disconnected');
+    console.log('[PTY ConPTY Bridge] Client disconnected');
   });
 });

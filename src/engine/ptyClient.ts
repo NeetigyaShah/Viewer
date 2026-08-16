@@ -167,6 +167,17 @@ class PtyClient {
       import('@tauri-apps/api/core').then(({ invoke }) => {
         invoke('pty_resize', { sessionId, cols, rows }).catch(() => {});
       });
+      return;
+    }
+
+    if (this.ws && this.isConnected) {
+      this.ws.send(
+        JSON.stringify({
+          type: 'RESIZE_PTY',
+          sessionId,
+          payload: { cols, rows },
+        })
+      );
     }
   }
 
