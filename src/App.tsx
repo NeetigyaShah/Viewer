@@ -81,7 +81,6 @@ export function App() {
     if (!activeTabId) return;
     ptyClient.writePty(activeTabId, `${text}\n`);
 
-    // Optionally append user turn
     const buf = buffers[activeTabId];
     if (buf) {
       const updatedBlocks = buf.append(`\n> 👤 **User**: ${text}\n\n`);
@@ -94,7 +93,7 @@ export function App() {
 
   const handleInterrupt = () => {
     if (!activeTabId) return;
-    ptyClient.writePty(activeTabId, '\x03'); // Send SIGINT (Ctrl+C)
+    ptyClient.writePty(activeTabId, '\x03');
   };
 
   const handleCloseTab = (id: string) => {
@@ -112,7 +111,7 @@ export function App() {
   const currentTab = tabs.find((t) => t.id === activeTabId);
 
   return (
-    <div className="h-screen w-screen flex bg-[#09090b] text-[#f4f4f5] overflow-hidden select-none">
+    <div className="h-screen w-screen flex bg-[#000000] text-[#f4f4f5] overflow-hidden select-none">
       {/* Collapsible Sidebar */}
       <Sidebar
         collapsed={sidebarCollapsed}
@@ -173,17 +172,17 @@ export function App() {
             />
 
             {tabs.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center space-y-4 text-gray-500 p-8 text-center">
-                <div className="p-4 rounded-2xl glass-panel border border-white/[0.08]">
-                  <MessageSquare size={32} className="text-[#89b4fa]" />
+              <div className="flex-1 flex flex-col items-center justify-center space-y-4 text-zinc-500 p-8 text-center">
+                <div className="p-4 rounded-2xl glass-panel border border-white/[0.08] text-white">
+                  <MessageSquare size={32} />
                 </div>
                 <h2 className="text-lg font-semibold text-white">No Active Agent Sessions</h2>
-                <p className="text-xs text-[#71717a] max-w-sm">
+                <p className="text-xs text-zinc-400 max-w-sm">
                   Launch a new session from the Agent Hub to start interacting with your coding agents.
                 </p>
                 <button
                   onClick={() => setActiveView('agents')}
-                  className="px-5 py-2.5 bg-[#89b4fa] text-[#11111b] rounded-xl text-xs font-semibold hover:bg-[#b4befe] transition-all shadow-md active:scale-95"
+                  className="px-5 py-2.5 bg-white text-black rounded-xl text-xs font-semibold hover:bg-zinc-200 transition-all shadow-md active:scale-95"
                 >
                   Open Agent Hub
                 </button>
@@ -197,8 +196,8 @@ export function App() {
                       onClick={() => setViewMode(viewMode === 'chat' ? 'document' : 'chat')}
                       className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
                         viewMode === 'chat'
-                          ? 'bg-[#89b4fa] text-[#11111b] font-semibold shadow-md'
-                          : 'bg-white/[0.04] hover:bg-white/[0.08] text-[#a1a1aa] hover:text-white border border-white/[0.06]'
+                          ? 'bg-white text-black font-semibold shadow-md'
+                          : 'bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.06]'
                       }`}
                     >
                       {viewMode === 'chat' ? <MessageSquare size={13} /> : <FileText size={13} />}
@@ -208,12 +207,12 @@ export function App() {
 
                   {/* Terminal Dock Controls */}
                   <div className="flex items-center space-x-1 glass-panel p-1 rounded-xl border border-white/[0.08]">
-                    <span className="text-[11px] text-gray-500 px-2 font-medium">Dock:</span>
+                    <span className="text-[11px] text-zinc-500 px-2 font-medium">Dock:</span>
                     <button
                       onClick={() => setDockPosition('bottom')}
                       title="Dock Bottom"
                       className={`p-1.5 rounded-lg transition-colors ${
-                        dockPosition === 'bottom' ? 'bg-[#89b4fa] text-[#11111b]' : 'text-gray-400 hover:text-white'
+                        dockPosition === 'bottom' ? 'bg-white text-black font-bold' : 'text-zinc-400 hover:text-white'
                       }`}
                     >
                       <PanelBottom size={13} />
@@ -222,7 +221,7 @@ export function App() {
                       onClick={() => setDockPosition('left')}
                       title="Dock Left"
                       className={`p-1.5 rounded-lg transition-colors ${
-                        dockPosition === 'left' ? 'bg-[#89b4fa] text-[#11111b]' : 'text-gray-400 hover:text-white'
+                        dockPosition === 'left' ? 'bg-white text-black font-bold' : 'text-zinc-400 hover:text-white'
                       }`}
                     >
                       <PanelLeft size={13} />
@@ -231,7 +230,7 @@ export function App() {
                       onClick={() => setDockPosition('right')}
                       title="Dock Right"
                       className={`p-1.5 rounded-lg transition-colors ${
-                        dockPosition === 'right' ? 'bg-[#89b4fa] text-[#11111b]' : 'text-gray-400 hover:text-white'
+                        dockPosition === 'right' ? 'bg-white text-black font-bold' : 'text-zinc-400 hover:text-white'
                       }`}
                     >
                       <PanelRight size={13} />
@@ -240,7 +239,7 @@ export function App() {
                       onClick={() => setDockPosition('float')}
                       title="Floating Window"
                       className={`p-1.5 rounded-lg transition-colors ${
-                        dockPosition === 'float' ? 'bg-[#89b4fa] text-[#11111b]' : 'text-gray-400 hover:text-white'
+                        dockPosition === 'float' ? 'bg-white text-black font-bold' : 'text-zinc-400 hover:text-white'
                       }`}
                     >
                       <Maximize2 size={13} />
@@ -249,7 +248,7 @@ export function App() {
                       onClick={() => setDockPosition('hidden')}
                       title="Hide Terminal"
                       className={`p-1.5 rounded-lg transition-colors ${
-                        dockPosition === 'hidden' ? 'bg-[#89b4fa] text-[#11111b]' : 'text-gray-400 hover:text-white'
+                        dockPosition === 'hidden' ? 'bg-white text-black font-bold' : 'text-zinc-400 hover:text-white'
                       }`}
                     >
                       <EyeOff size={13} />
