@@ -10,6 +10,7 @@ import { WorkspaceLauncher } from './components/WorkspaceLauncher';
 import { HistoryDrawer } from './components/HistoryDrawer';
 import { TerminalDock } from './components/TerminalDock';
 import { VisualCanvas } from './components/VisualCanvas';
+import { FontTestModal, FONT_CANDIDATES, FontOption } from './components/FontTestModal';
 import {
   PanelBottom,
   PanelLeft,
@@ -20,6 +21,7 @@ import {
   FileText,
   ListCollapse,
   Download,
+  Sparkles,
 } from 'lucide-react';
 import './styles/theme.css';
 
@@ -30,6 +32,10 @@ export function App() {
   const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<AgentInfo | null>(null);
   const [isLaunching, setIsLaunching] = useState<boolean>(false);
+
+  // Blind Font Comparison Modal State
+  const [isFontModalOpen, setIsFontModalOpen] = useState<boolean>(false);
+  const [selectedFont, setSelectedFont] = useState<FontOption>(FONT_CANDIDATES[0]);
 
   // Workspace Multi-Tab State
   const [tabs, setTabs] = useState<SessionTab[]>([]);
@@ -53,6 +59,11 @@ export function App() {
     ptyClient.getSavedSessions().then((list) => {
       setSavedSessions(list);
     });
+  };
+
+  const handleSelectFont = (opt: FontOption) => {
+    setSelectedFont(opt);
+    document.body.style.fontFamily = opt.proseFont;
   };
 
   const handleSelectAgent = (agent: AgentInfo) => {
@@ -187,6 +198,14 @@ export function App() {
 
   return (
     <div className="h-screen w-screen flex bg-[#000000] text-[#f4f4f5] overflow-hidden select-none">
+      {/* Font Comparison Modal */}
+      <FontTestModal
+        isOpen={isFontModalOpen}
+        onClose={() => setIsFontModalOpen(false)}
+        selectedFontKey={selectedFont.key}
+        onSelectFont={handleSelectFont}
+      />
+
       {/* Collapsible Sidebar */}
       <Sidebar
         collapsed={sidebarCollapsed}
@@ -222,6 +241,19 @@ export function App() {
                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                 className="flex-1 flex flex-col overflow-hidden"
               >
+                {/* Top Banner with Blind Font Test trigger */}
+                <div className="flex justify-end p-4">
+                  <motion.button
+                    whileHover={{ y: -1 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => setIsFontModalOpen(true)}
+                    className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full glass-panel hover:border-white/[0.25] text-xs text-zinc-300 hover:text-white transition-all cursor-pointer shadow-sm"
+                  >
+                    <Sparkles size={12} className="text-zinc-400" />
+                    <span>Compare Typography ({selectedFont.label})</span>
+                  </motion.button>
+                </div>
+
                 <AgentHub
                   agents={agents}
                   onSelectAgent={handleSelectAgent}
@@ -336,8 +368,19 @@ export function App() {
                       </motion.button>
                     </div>
 
-                    {/* Right: TOC, Export & Terminal Controls in ONE unified row */}
+                    {/* Right: Font Test, TOC, Export & Terminal Controls */}
                     <div className="flex items-center space-x-2">
+                      <motion.button
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => setIsFontModalOpen(true)}
+                        className="btn-tactile flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.06] transition-all duration-150 cursor-pointer"
+                        title="Blind Font Test"
+                      >
+                        <Sparkles size={12} className="text-zinc-400" />
+                        <span>Font ({selectedFont.label})</span>
+                      </motion.button>
+
                       <motion.button
                         whileHover={{ y: -1 }}
                         whileTap={{ scale: 0.96 }}
