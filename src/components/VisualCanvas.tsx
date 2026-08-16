@@ -9,7 +9,7 @@ import { SvgBlock } from './renderers/SvgBlock';
 import { DiffBlock } from './renderers/DiffBlock';
 import { ThinkingBlock } from './renderers/ThinkingBlock';
 import { PromptBar } from './PromptBar';
-import { Download, ListCollapse, BookOpen, Sparkles } from 'lucide-react';
+import { Download, ListCollapse, BookOpen, Sparkles, Wrench, Search, FileCode } from 'lucide-react';
 
 interface VisualCanvasProps {
   blocks: MarkdownBlock[];
@@ -62,6 +62,13 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({
     ));
   };
 
+  const starterCards = [
+    { title: 'Explain Architecture', desc: 'Summarize the structure and data flow of this project', prompt: 'Explain the architecture and codebase structure of this repository in detail', icon: <Sparkles size={16} className="text-zinc-400" /> },
+    { title: 'Run Tests & Fix Errors', desc: 'Execute the test suite and resolve any breaking issues', prompt: 'Run the test suite and fix any failing errors step-by-step', icon: <Wrench size={16} className="text-zinc-400" /> },
+    { title: 'Search & Inspect Code', desc: 'Find key components, functions, or patterns', prompt: 'Search the codebase for all major entrypoints and list them', icon: <Search size={16} className="text-zinc-400" /> },
+    { title: 'Plan New Feature', desc: 'Draft an implementation plan with test-driven steps', prompt: 'Draft a comprehensive implementation plan for adding a new feature', icon: <FileCode size={16} className="text-zinc-400" /> },
+  ];
+
   return (
     <div className="flex-1 flex overflow-hidden bg-[#000000] text-[#f4f4f5] relative">
       {/* Table of Contents Sidebar */}
@@ -81,7 +88,7 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({
               </span>
               <button
                 onClick={() => setShowToc(false)}
-                className="text-zinc-400 hover:text-white p-1 rounded hover:bg-white/[0.06] transition-colors"
+                className="text-zinc-400 hover:text-white p-1 rounded hover:bg-white/[0.06] transition-colors cursor-pointer"
               >
                 ✕
               </button>
@@ -110,26 +117,28 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({
       {/* Main Canvas Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Quick Actions Header */}
-        <div className="flex justify-between items-center px-6 py-2.5 glass-panel border-b border-white/[0.08] text-xs select-none">
-          <motion.button
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.96 }}
-            onClick={() => setShowToc(!showToc)}
-            className={`btn-tactile flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 ${
-              showToc
-                ? 'bg-white text-black font-semibold shadow-md'
-                : 'bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.06]'
-            }`}
-          >
-            <ListCollapse size={13} />
-            <span>TOC ({headings.length})</span>
-          </motion.button>
+        <div className="flex justify-between items-center px-6 py-2 glass-panel border-b border-white/[0.08] text-xs select-none">
+          <div className="flex items-center space-x-2">
+            <motion.button
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setShowToc(!showToc)}
+              className={`btn-tactile flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 cursor-pointer ${
+                showToc
+                  ? 'bg-white text-black font-semibold shadow-md'
+                  : 'bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.06]'
+              }`}
+            >
+              <ListCollapse size={13} />
+              <span>TOC ({headings.length})</span>
+            </motion.button>
+          </div>
 
           <motion.button
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.96 }}
             onClick={handleExportMarkdown}
-            className="btn-tactile flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.06] transition-all duration-150"
+            className="btn-tactile flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.06] transition-all duration-150 cursor-pointer"
           >
             <Download size={13} />
             <span>Export .MD</span>
@@ -140,24 +149,63 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({
         <div className="flex-1 overflow-y-auto p-8 space-y-6 max-w-4xl mx-auto w-full">
           {blocks.length === 0 ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="h-full flex flex-col items-center justify-center text-center p-12 text-zinc-500 space-y-4"
+              className="h-full flex flex-col justify-center items-center text-center p-6 space-y-8 select-none"
             >
-              <div className="p-4 rounded-2xl glass-panel border border-white/[0.08] text-white shadow-xl">
-                <Sparkles size={32} />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-base font-semibold text-white">Live Markdown Stream Ready</h3>
-                <p className="text-xs max-w-sm text-zinc-400 leading-relaxed">
-                  Start typing in the prompt bar below or the terminal. Formatted text, syntax-highlighted code, LaTeX math, and Mermaid charts will appear here in real time.
+              <div className="space-y-2">
+                <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                  What would you like to build?
+                </h2>
+                <p className="text-sm text-zinc-400 max-w-md mx-auto">
+                  Ask {agentName} a question or choose a starter task below to begin.
                 </p>
+              </div>
+
+              {/* Starter Prompt Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl text-left">
+                {starterCards.map((card, idx) => (
+                  <motion.div
+                    key={idx}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => onSendPrompt && onSendPrompt(card.prompt)}
+                    className="card-glow glass-panel p-4 rounded-xl border border-white/[0.08] hover:border-white/[0.25] bg-[#0c0c0e] hover:bg-[#121215] cursor-pointer transition-all duration-150 flex flex-col justify-between space-y-2 group"
+                  >
+                    <div className="flex items-center space-x-2.5">
+                      <div className="p-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-white group-hover:bg-white group-hover:text-black transition-colors duration-150">
+                        {card.icon}
+                      </div>
+                      <span className="text-xs font-semibold text-white group-hover:text-white transition-colors">
+                        {card.title}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400 leading-relaxed">{card.desc}</p>
+                  </motion.div>
+                ))}
               </div>
             </motion.div>
           ) : (
             blocks.map((block, index) => {
               const isLast = index === blocks.length - 1;
+
+              // Sleek Right-Aligned User Bubble (No cheesy emoji!)
+              if (block.type === 'user-prompt') {
+                return (
+                  <motion.div
+                    key={block.id}
+                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className="flex justify-end my-4"
+                  >
+                    <div className="bg-[#18181b] border border-white/[0.14] text-white px-5 py-3.5 rounded-2xl rounded-br-sm max-w-[80%] shadow-xl leading-relaxed text-sm">
+                      <p className="whitespace-pre-wrap">{block.rawContent}</p>
+                    </div>
+                  </motion.div>
+                );
+              }
 
               if (block.type === 'thought') {
                 return <ThinkingBlock key={block.id} content={block.rawContent} isComplete={block.isComplete} />;

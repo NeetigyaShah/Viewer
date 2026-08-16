@@ -25,7 +25,7 @@ export function App() {
   const [tabs, setTabs] = useState<SessionTab[]>([]);
   const [activeTabId, setActiveTabId] = useState<string>('');
   const [dockPosition, setDockPosition] = useState<DockPosition>('bottom');
-  const [viewMode, setViewMode] = useState<ViewMode>('document');
+  const [viewMode, setViewMode] = useState<ViewMode>('chat');
 
   // Per-Tab Buffers & Markdown Blocks
   const [buffers, setBuffers] = useState<Record<string, BlockStreamBuffer>>({});
@@ -134,7 +134,7 @@ export function App() {
 
     const buf = buffers[activeTabId];
     if (buf) {
-      const updatedBlocks = buf.append(`\n> 👤 **User**: ${text}\n\n`);
+      const updatedBlocks = buf.appendUserPrompt(text);
       setBlocks((prev) => ({
         ...prev,
         [activeTabId]: [...updatedBlocks],
@@ -178,7 +178,7 @@ export function App() {
         }}
       />
 
-      {/* Main Content Area with Seamless Page Transitions */}
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
         <AnimatePresence mode="wait">
           {activeView === 'agents' ? (
@@ -282,26 +282,39 @@ export function App() {
               ) : (
                 <div className="flex-1 flex flex-col overflow-hidden">
                   {/* Workspace Top Toolbar */}
-                  <div className="flex justify-between items-center px-6 py-2.5 glass-panel border-b border-white/[0.08] text-xs select-none">
-                    <div className="flex items-center space-x-2">
+                  <div className="flex justify-between items-center px-6 py-2 glass-panel border-b border-white/[0.08] text-xs">
+                    {/* Sleek Segmented View Switcher */}
+                    <div className="flex items-center space-x-1 bg-[#121215] p-1 rounded-xl border border-white/[0.08]">
                       <motion.button
-                        whileHover={{ y: -1 }}
                         whileTap={{ scale: 0.96 }}
-                        onClick={() => setViewMode(viewMode === 'chat' ? 'document' : 'chat')}
-                        className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
+                        onClick={() => setViewMode('chat')}
+                        className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer ${
                           viewMode === 'chat'
-                            ? 'bg-white text-black font-semibold shadow-md'
-                            : 'bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.06]'
+                            ? 'bg-white text-black font-semibold shadow-sm'
+                            : 'text-zinc-400 hover:text-white'
                         }`}
                       >
-                        {viewMode === 'chat' ? <MessageSquare size={13} /> : <FileText size={13} />}
-                        <span>{viewMode === 'chat' ? 'Chat Cards Mode' : 'Living .MD Mode'}</span>
+                        <MessageSquare size={13} />
+                        <span>Chat</span>
+                      </motion.button>
+
+                      <motion.button
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => setViewMode('document')}
+                        className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer ${
+                          viewMode === 'document'
+                            ? 'bg-white text-black font-semibold shadow-sm'
+                            : 'text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        <FileText size={13} />
+                        <span>Document</span>
                       </motion.button>
                     </div>
 
                     {/* Terminal Dock Controls */}
                     <div className="flex items-center space-x-1 glass-panel p-1 rounded-xl border border-white/[0.08]">
-                      <span className="text-[11px] text-zinc-500 px-2 font-medium">Dock:</span>
+                      <span className="text-[11px] text-zinc-500 px-2 font-medium">Terminal:</span>
                       {(
                         [
                           { pos: 'bottom', title: 'Dock Bottom', icon: <PanelBottom size={13} /> },

@@ -20,6 +20,19 @@ export class BlockStreamBuffer {
     return this.blocks;
   }
 
+  appendUserPrompt(promptText: string): MarkdownBlock[] {
+    this.blocks.push({
+      id: `user-prompt-${Date.now()}`,
+      type: 'user-prompt',
+      rawContent: promptText,
+      isComplete: true,
+      timestamp: Date.now(),
+    });
+    this.rawBuffer += `\n\nUser: ${promptText}\n\n`;
+    this.cleanText += `\n\nUser: ${promptText}\n\n`;
+    return this.blocks;
+  }
+
   getText(): string {
     return this.cleanText;
   }
@@ -177,6 +190,12 @@ export class BlockStreamBuffer {
       });
     }
 
-    this.blocks = newBlocks;
+    // Preserve any dynamically injected user prompts
+    const userPrompts = this.blocks.filter((b) => b.type === 'user-prompt');
+    if (userPrompts.length > 0 && newBlocks.length === 0) {
+      this.blocks = userPrompts;
+    } else if (newBlocks.length > 0) {
+      this.blocks = newBlocks;
+    }
   }
 }

@@ -16,7 +16,8 @@ export type BlockType =
   | 'list'
   | 'diff'
   | 'svg'
-  | 'thought';
+  | 'thought'
+  | 'user-prompt';
 
 export interface MarkdownBlock {
   id: string;
