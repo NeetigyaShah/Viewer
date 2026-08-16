@@ -1,4 +1,4 @@
-import { AgentInfo } from './types';
+import { AgentInfo, SavedSession } from './types';
 
 type OutputListener = (data: string) => void;
 type ExitListener = (exitCode: number) => void;
@@ -11,6 +11,7 @@ class PtyClient {
   private pendingSpawns: Map<string, { command: string; args: string[]; cwd: string }> = new Map();
   private isConnected: boolean = false;
   private agentScanResolver: ((agents: AgentInfo[]) => void) | null = null;
+  private sessionsResolver: ((sessions: SavedSession[]) => void) | null = null;
 
   constructor() {
     if (!this.isTauri) {
@@ -24,7 +25,6 @@ class PtyClient {
 
       this.ws.onopen = () => {
         this.isConnected = true;
-        // Flush any pending spawns
         for (const [sessionId, info] of this.pendingSpawns.entries()) {
           this.ws?.send(
             JSON.stringify({
@@ -43,6 +43,9 @@ class PtyClient {
           if (msg.type === 'AGENTS_SCANNED' && this.agentScanResolver) {
             this.agentScanResolver(msg.payload as AgentInfo[]);
             this.agentScanResolver = null;
+          } else if (msg.type === 'SESSIONS_LOADED' && this.sessionsResolver) {
+            this.sessionsResolver(msg.payload as SavedSession[]);
+            this.sessionsResolver = null;
           } else if (msg.type === 'PTY_OUTPUT') {
             const listeners = this.outputListeners.get(msg.sessionId);
             if (listeners) {
@@ -83,7 +86,6 @@ class PtyClient {
       if (this.ws && this.isConnected) {
         this.ws.send(JSON.stringify({ type: 'SCAN_AGENTS' }));
       } else {
-        // Fallback preset list if server not ready
         setTimeout(() => {
           resolve([
             { id: 'claude', name: 'Claude Code CLI', command: 'claude', is_installed: true, description: "Anthropic's official agentic coding assistant" },
@@ -95,6 +97,23 @@ class PtyClient {
         }, 300);
       }
     });
+  }
+
+  async getSavedSessions(): Promise<SavedSession[]> {
+    return new Promise((resolve) => {
+      this.sessionsResolver = resolve;
+      if (this.ws && this.isConnected) {
+        this.ws.send(JSON.stringify({ type: 'GET_SESSIONS' }));
+      } else {
+        setTimeout(() => resolve([]), 300);
+      }
+    });
+  }
+
+  saveSession(session: SavedSession): void {
+    if (this.ws && this.isConnected) {
+      this.ws.send(JSON.stringify({ type: 'SAVE_SESSION', payload: session }));
+    }
   }
 
   async spawnPty(sessionId: string, command: string, args: string[] = [], cwd: string = ''): Promise<void> {

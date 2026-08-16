@@ -36,5 +36,15 @@ export interface SessionTab {
   active: boolean;
 }
 
+export interface SavedSession {
+  id: string;
+  title: string;
+  agentId: string;
+  agentName: string;
+  cwd: string;
+  rawText: string;
+  timestamp: number;
+}
+
 export type DockPosition = 'bottom' | 'left' | 'right' | 'float' | 'hidden';
 export type ViewMode = 'chat' | 'document';

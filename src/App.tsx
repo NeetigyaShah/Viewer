@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AgentInfo, SessionTab, DockPosition, ViewMode, MarkdownBlock } from './engine/types';
+import { AgentInfo, SessionTab, SavedSession, DockPosition, ViewMode, MarkdownBlock } from './engine/types';
 import { ptyClient } from './engine/ptyClient';
 import { BlockStreamBuffer } from './engine/blockBuffer';
 import { Sidebar } from './components/Sidebar';
 import { TabManager } from './components/TabManager';
 import { AgentHub } from './components/AgentHub';
 import { WorkspaceLauncher } from './components/WorkspaceLauncher';
+import { HistoryDrawer } from './components/HistoryDrawer';
 import { TerminalDock } from './components/TerminalDock';
 import { VisualCanvas } from './components/VisualCanvas';
 import { PanelBottom, PanelLeft, PanelRight, Maximize2, EyeOff, MessageSquare, FileText } from 'lucide-react';
 import './styles/theme.css';
 
 export function App() {
-  const [activeView, setActiveView] = useState<'workspace' | 'agents' | 'settings'>('agents');
+  const [activeView, setActiveView] = useState<'workspace' | 'agents' | 'history' | 'settings'>('agents');
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [agents, setAgents] = useState<AgentInfo[]>([]);
+  const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<AgentInfo | null>(null);
   const [isLaunching, setIsLaunching] = useState<boolean>(false);
 
@@ -33,7 +35,14 @@ export function App() {
     ptyClient.scanAgents().then((list) => {
       setAgents(list);
     });
+    loadSavedSessions();
   }, []);
+
+  const loadSavedSessions = () => {
+    ptyClient.getSavedSessions().then((list) => {
+      setSavedSessions(list);
+    });
+  };
 
   const handleSelectAgent = (agent: AgentInfo) => {
     setSelectedAgent(agent);
@@ -67,6 +76,33 @@ export function App() {
     setActiveView('workspace');
   };
 
+  const handleRestoreSession = (session: SavedSession) => {
+    const existingTab = tabs.find((t) => t.id === session.id);
+    if (existingTab) {
+      setActiveTabId(session.id);
+      setTabs((prev) => prev.map((t) => ({ ...t, active: t.id === session.id })));
+    } else {
+      const newTab: SessionTab = {
+        id: session.id,
+        title: session.title,
+        agentId: session.agentId,
+        cwd: session.cwd,
+        status: 'idle',
+        active: true,
+      };
+
+      const buf = new BlockStreamBuffer();
+      const initialBlocks = buf.append(session.rawText);
+
+      setBuffers((prev) => ({ ...prev, [session.id]: buf }));
+      setBlocks((prev) => ({ ...prev, [session.id]: [...initialBlocks] }));
+      setTabs((prev) => [...prev.map((t) => ({ ...t, active: false })), newTab]);
+      setActiveTabId(session.id);
+    }
+
+    setActiveView('workspace');
+  };
+
   const handleOutput = (sessionId: string, chunk: string) => {
     const buf = buffers[sessionId];
     if (buf) {
@@ -75,6 +111,20 @@ export function App() {
         ...prev,
         [sessionId]: [...updatedBlocks],
       }));
+
+      // Auto-save session periodically
+      const tab = tabs.find((t) => t.id === sessionId);
+      if (tab) {
+        ptyClient.saveSession({
+          id: sessionId,
+          title: tab.title,
+          agentId: tab.agentId,
+          agentName: tab.title.split(' (')[0],
+          cwd: tab.cwd,
+          rawText: buf.getText(),
+          timestamp: Date.now(),
+        });
+      }
     }
   };
 
@@ -122,6 +172,8 @@ export function App() {
           setActiveView(v);
           if (v === 'agents') {
             setIsLaunching(false);
+          } else if (v === 'history') {
+            loadSavedSessions();
           }
         }}
       />
@@ -166,6 +218,21 @@ export function App() {
                 />
               </motion.div>
             )
+          ) : activeView === 'history' ? (
+            <motion.div
+              key="history"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="flex-1 flex flex-col overflow-hidden"
+            >
+              <HistoryDrawer
+                sessions={savedSessions}
+                onSelectSession={handleRestoreSession}
+                onClose={() => setActiveView('workspace')}
+              />
+            </motion.div>
           ) : (
             <motion.div
               key="workspace"

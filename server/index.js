@@ -1,13 +1,19 @@
 import { WebSocketServer } from 'ws';
 import { spawn } from 'child_process';
-import { existsSync, readdirSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 
 const PORT = 3001;
-const wss = new WebSocketServer({ port: PORT });
+const SESSIONS_DIR = join(homedir(), '.viewer', 'sessions');
 
+if (!existsSync(SESSIONS_DIR)) {
+  mkdirSync(SESSIONS_DIR, { recursive: true });
+}
+
+const wss = new WebSocketServer({ port: PORT });
 console.log(`[PTY Bridge Server] Running on ws://127.0.0.1:${PORT}`);
+console.log(`[Session Store] Sessions directory: ${SESSIONS_DIR}`);
 
 const activeProcesses = new Map();
 
@@ -45,6 +51,18 @@ function scanInstalledAgents() {
   });
 }
 
+function listSavedSessions() {
+  try {
+    const files = readdirSync(SESSIONS_DIR).filter(f => f.endsWith('.json'));
+    return files.map(file => {
+      const content = readFileSync(join(SESSIONS_DIR, file), 'utf-8');
+      return JSON.parse(content);
+    }).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  } catch {
+    return [];
+  }
+}
+
 wss.on('connection', (ws) => {
   console.log('[PTY Bridge] Client connected');
 
@@ -56,6 +74,19 @@ wss.on('connection', (ws) => {
       if (type === 'SCAN_AGENTS') {
         const agents = scanInstalledAgents();
         ws.send(JSON.stringify({ type: 'AGENTS_SCANNED', payload: agents }));
+        return;
+      }
+
+      if (type === 'GET_SESSIONS') {
+        const sessions = listSavedSessions();
+        ws.send(JSON.stringify({ type: 'SESSIONS_LOADED', payload: sessions }));
+        return;
+      }
+
+      if (type === 'SAVE_SESSION') {
+        const { id, title, agentId, cwd, rawText, timestamp } = payload;
+        const filePath = join(SESSIONS_DIR, `${id}.json`);
+        writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf-8');
         return;
       }
 

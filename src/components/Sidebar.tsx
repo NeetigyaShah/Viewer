@@ -1,11 +1,11 @@
 import React from 'react';
-import { Bot, Folder, ChevronLeft, ChevronRight, Sparkles, Terminal } from 'lucide-react';
+import { Bot, Folder, History, ChevronLeft, ChevronRight, Sparkles, Terminal } from 'lucide-react';
 
 interface SidebarProps {
   collapsed: boolean;
   onToggleCollapse: () => void;
-  activeView: 'workspace' | 'agents' | 'settings';
-  onSelectView: (view: 'workspace' | 'agents' | 'settings') => void;
+  activeView: 'workspace' | 'agents' | 'history' | 'settings';
+  onSelectView: (view: 'workspace' | 'agents' | 'history' | 'settings') => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -31,7 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
           <button
             onClick={onToggleCollapse}
-            className="text-zinc-500 hover:text-white p-1 rounded-md hover:bg-white/[0.06] transition-colors"
+            className="text-zinc-500 hover:text-white p-1 rounded-md hover:bg-white/[0.06] transition-colors cursor-pointer"
           >
             {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
@@ -41,7 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="px-2 space-y-1">
           <button
             onClick={() => onSelectView('workspace')}
-            className={`w-full flex items-center space-x-3 px-3 py-2 rounded-xl text-xs transition-all duration-150 ${
+            className={`w-full flex items-center space-x-3 px-3 py-2 rounded-xl text-xs transition-all duration-150 cursor-pointer ${
               activeView === 'workspace'
                 ? 'bg-white/[0.08] text-white font-semibold border border-white/[0.12] shadow-sm'
                 : 'text-zinc-400 hover:bg-white/[0.04] hover:text-white border border-transparent'
@@ -53,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <button
             onClick={() => onSelectView('agents')}
-            className={`w-full flex items-center space-x-3 px-3 py-2 rounded-xl text-xs transition-all duration-150 ${
+            className={`w-full flex items-center space-x-3 px-3 py-2 rounded-xl text-xs transition-all duration-150 cursor-pointer ${
               activeView === 'agents'
                 ? 'bg-white/[0.08] text-white font-semibold border border-white/[0.12] shadow-sm'
                 : 'text-zinc-400 hover:bg-white/[0.04] hover:text-white border border-transparent'
@@ -61,6 +61,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <Bot size={16} className={activeView === 'agents' ? 'text-white' : 'text-zinc-400'} />
             {!collapsed && <span>Agent Hub</span>}
+          </button>
+
+          <button
+            onClick={() => onSelectView('history')}
+            className={`w-full flex items-center space-x-3 px-3 py-2 rounded-xl text-xs transition-all duration-150 cursor-pointer ${
+              activeView === 'history'
+                ? 'bg-white/[0.08] text-white font-semibold border border-white/[0.12] shadow-sm'
+                : 'text-zinc-400 hover:bg-white/[0.04] hover:text-white border border-transparent'
+            }`}
+          >
+            <History size={16} className={activeView === 'history' ? 'text-white' : 'text-zinc-400'} />
+            {!collapsed && <span>History</span>}
           </button>
         </div>
       </div>
