@@ -42,6 +42,33 @@ export class BlockStreamBuffer {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
 
+      // Handling inside Thought / Thinking tag
+      if (currentBlock && currentBlock.type === 'thought') {
+        currentBlock.lines.push(line);
+        if (line.includes('</thought>') || line.includes('</thinking>') || line.trim() === '---') {
+          currentBlock.isComplete = true;
+          newBlocks.push({
+            id: `block-${newBlocks.length}`,
+            type: 'thought',
+            rawContent: currentBlock.lines.join('\n'),
+            isComplete: true,
+            timestamp: Date.now(),
+          });
+          currentBlock = null;
+        }
+        continue;
+      }
+
+      // Handling opening Thought / Thinking tag
+      if (
+        line.trim().startsWith('<thought>') ||
+        line.trim().startsWith('<thinking>') ||
+        line.trim().toLowerCase().startsWith('*thinking*')
+      ) {
+        currentBlock = { type: 'thought', lines: [line], isComplete: false };
+        continue;
+      }
+
       // Handling inside code fence
       if (currentBlock && currentBlock.type === 'code') {
         currentBlock.lines.push(line);

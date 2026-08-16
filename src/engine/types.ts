@@ -7,7 +7,16 @@ export interface TokenSpan {
   underline?: boolean;
 }
 
-export type BlockType = 'heading' | 'paragraph' | 'code' | 'table' | 'math' | 'list' | 'diff' | 'svg';
+export type BlockType =
+  | 'heading'
+  | 'paragraph'
+  | 'code'
+  | 'table'
+  | 'math'
+  | 'list'
+  | 'diff'
+  | 'svg'
+  | 'thought';
 
 export interface MarkdownBlock {
   id: string;

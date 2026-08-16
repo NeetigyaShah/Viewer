@@ -7,6 +7,7 @@ import { MermaidBlock } from './renderers/MermaidBlock';
 import { MathBlock } from './renderers/MathBlock';
 import { SvgBlock } from './renderers/SvgBlock';
 import { DiffBlock } from './renderers/DiffBlock';
+import { ThinkingBlock } from './renderers/ThinkingBlock';
 import { PromptBar } from './PromptBar';
 import { Download, ListCollapse, BookOpen, Sparkles } from 'lucide-react';
 
@@ -157,6 +158,10 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({
           ) : (
             blocks.map((block, index) => {
               const isLast = index === blocks.length - 1;
+
+              if (block.type === 'thought') {
+                return <ThinkingBlock key={block.id} content={block.rawContent} isComplete={block.isComplete} />;
+              }
 
               if (block.type === 'code') {
                 if (block.lang === 'mermaid') {
