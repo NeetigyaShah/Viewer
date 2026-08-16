@@ -33,9 +33,9 @@ export function App() {
   const [selectedAgent, setSelectedAgent] = useState<AgentInfo | null>(null);
   const [isLaunching, setIsLaunching] = useState<boolean>(false);
 
-  // Blind Font Comparison Modal State
+  // Blind Font Comparison Modal State (Default to Option B - JetBrains Mono)
   const [isFontModalOpen, setIsFontModalOpen] = useState<boolean>(false);
-  const [selectedFont, setSelectedFont] = useState<FontOption>(FONT_CANDIDATES[0]);
+  const [selectedFont, setSelectedFont] = useState<FontOption>(FONT_CANDIDATES[1]);
 
   // Workspace Multi-Tab State
   const [tabs, setTabs] = useState<SessionTab[]>([]);
@@ -250,7 +250,7 @@ export function App() {
                     className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full glass-panel hover:border-white/[0.25] text-xs text-zinc-300 hover:text-white transition-all cursor-pointer shadow-sm"
                   >
                     <Sparkles size={12} className="text-zinc-400" />
-                    <span>Compare Typography ({selectedFont.label})</span>
+                    <span>Typography ({selectedFont.label})</span>
                   </motion.button>
                 </div>
 
@@ -375,7 +375,7 @@ export function App() {
                         whileTap={{ scale: 0.96 }}
                         onClick={() => setIsFontModalOpen(true)}
                         className="btn-tactile flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.06] transition-all duration-150 cursor-pointer"
-                        title="Blind Font Test"
+                        title="Typography Selector"
                       >
                         <Sparkles size={12} className="text-zinc-400" />
                         <span>Font ({selectedFont.label})</span>
@@ -387,7 +387,7 @@ export function App() {
                         onClick={() => setShowToc(!showToc)}
                         className={`btn-tactile flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 cursor-pointer ${
                           showToc
-                            ? 'bg-white text-black font-semibold shadow-sm'
+                            ? 'bg-white text-black font-semibold shadow-md'
                             : 'bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.06]'
                         }`}
                       >
