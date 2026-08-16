@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Send, Square, Sparkles, Wrench, Search, FileCode } from 'lucide-react';
 
 interface PromptBarProps {
@@ -45,54 +46,49 @@ export const PromptBar: React.FC<PromptBarProps> = ({
     textareaRef.current?.focus();
   };
 
+  const chips = [
+    { label: 'Explain', template: 'Explain what you just did and next steps', icon: <Sparkles size={11} className="text-zinc-400" /> },
+    { label: 'Run Tests & Fix', template: 'Run tests and fix any failing errors', icon: <Wrench size={11} className="text-zinc-400" /> },
+    { label: 'Search Code', template: 'Search the codebase for ', icon: <Search size={11} className="text-zinc-400" /> },
+    { label: 'Draft Plan', template: 'Draft an implementation plan for ', icon: <FileCode size={11} className="text-zinc-400" /> },
+  ];
+
   return (
     <div className="w-full max-w-4xl mx-auto px-6 pb-6 pt-2 select-none">
       {/* Quick Action Chips */}
       <div className="flex items-center space-x-2 overflow-x-auto pb-2 text-[11px]">
-        <button
-          onClick={() => handleChipClick('Explain what you just did and next steps')}
-          className="flex items-center space-x-1.5 px-3 py-1 rounded-full glass-panel hover:border-white/[0.25] text-zinc-300 hover:text-white transition-all whitespace-nowrap active:scale-95"
-        >
-          <Sparkles size={11} className="text-zinc-400" />
-          <span>Explain</span>
-        </button>
+        {chips.map((chip, i) => (
+          <motion.button
+            key={i}
+            whileHover={{ y: -1, transition: { duration: 0.15 } }}
+            whileTap={{ scale: 0.94 }}
+            onClick={() => handleChipClick(chip.template)}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full glass-panel hover:border-white/[0.25] text-zinc-300 hover:text-white transition-all whitespace-nowrap shadow-sm cursor-pointer"
+          >
+            {chip.icon}
+            <span>{chip.label}</span>
+          </motion.button>
+        ))}
 
-        <button
-          onClick={() => handleChipClick('Run tests and fix any failing errors')}
-          className="flex items-center space-x-1.5 px-3 py-1 rounded-full glass-panel hover:border-white/[0.25] text-zinc-300 hover:text-white transition-all whitespace-nowrap active:scale-95"
-        >
-          <Wrench size={11} className="text-zinc-400" />
-          <span>Run Tests & Fix</span>
-        </button>
-
-        <button
-          onClick={() => handleChipClick('Search the codebase for ')}
-          className="flex items-center space-x-1.5 px-3 py-1 rounded-full glass-panel hover:border-white/[0.25] text-zinc-300 hover:text-white transition-all whitespace-nowrap active:scale-95"
-        >
-          <Search size={11} className="text-zinc-400" />
-          <span>Search Code</span>
-        </button>
-
-        <button
-          onClick={() => handleChipClick('Draft an implementation plan for ')}
-          className="flex items-center space-x-1.5 px-3 py-1 rounded-full glass-panel hover:border-white/[0.25] text-zinc-300 hover:text-white transition-all whitespace-nowrap active:scale-95"
-        >
-          <FileCode size={11} className="text-zinc-400" />
-          <span>Draft Plan</span>
-        </button>
-
-        <button
+        <motion.button
+          whileHover={{ y: -1, transition: { duration: 0.15 } }}
+          whileTap={{ scale: 0.94 }}
           onClick={onInterrupt}
-          className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/[0.04] border border-red-500/30 hover:border-red-500/60 text-red-300 transition-all whitespace-nowrap active:scale-95"
+          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-red-500/30 hover:border-red-500/60 text-red-300 transition-all whitespace-nowrap cursor-pointer ml-auto"
           title="Send Ctrl+C"
         >
           <Square size={10} className="text-red-400 fill-red-400" />
           <span>Interrupt (Ctrl+C)</span>
-        </button>
+        </motion.button>
       </div>
 
       {/* Floating Prompt Bar */}
-      <div className="relative glass-panel rounded-2xl p-2 shadow-2xl border border-white/[0.12] focus-within:border-white/40 focus-within:shadow-2xl transition-all duration-200 bg-[#0c0c0e]/95">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className="relative glass-panel rounded-2xl p-2.5 shadow-2xl border border-white/[0.12] focus-within:border-white/40 focus-within:shadow-[0_0_25px_rgba(255,255,255,0.06)] transition-all duration-200 bg-[#0c0c0e]/95"
+      >
         <div className="flex items-end space-x-2">
           <textarea
             ref={textareaRef}
@@ -104,19 +100,21 @@ export const PromptBar: React.FC<PromptBarProps> = ({
             className="flex-1 bg-transparent text-sm text-white placeholder-zinc-500 px-3 py-2 resize-none focus:outline-none max-h-40 overflow-y-auto leading-relaxed"
           />
 
-          <button
+          <motion.button
+            whileHover={input.trim() && !isStreaming ? { scale: 1.05 } : {}}
+            whileTap={input.trim() && !isStreaming ? { scale: 0.94 } : {}}
             onClick={handleSubmit}
             disabled={!input.trim() || isStreaming}
-            className={`p-2.5 rounded-xl transition-all duration-150 flex items-center justify-center ${
+            className={`p-3 rounded-xl transition-all duration-150 flex items-center justify-center ${
               input.trim() && !isStreaming
-                ? 'bg-white text-black hover:bg-zinc-200 shadow-md cursor-pointer active:scale-95 font-semibold'
+                ? 'bg-white text-black hover:bg-zinc-200 shadow-md cursor-pointer font-semibold'
                 : 'bg-white/[0.04] text-zinc-600 cursor-not-allowed'
             }`}
           >
             <Send size={15} />
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

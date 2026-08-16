@@ -23,26 +23,26 @@ export const TerminalDock: React.FC<TerminalDockProps> = ({ sessionId, dockPosit
 
     const term = new Terminal({
       theme: {
-        background: '#181825',
-        foreground: '#cdd6f4',
-        cursor: '#f5e0dc',
-        selectionBackground: '#585b70',
-        black: '#45475a',
-        red: '#f38ba8',
-        green: '#a6e3a1',
-        yellow: '#f9e2af',
-        blue: '#89b4fa',
-        magenta: '#cba6f7',
-        cyan: '#94e2d5',
-        white: '#bac2de',
-        brightBlack: '#585b70',
-        brightRed: '#f38ba8',
-        brightGreen: '#a6e3a1',
-        brightYellow: '#f9e2af',
-        brightBlue: '#89b4fa',
-        brightMagenta: '#cba6f7',
-        brightCyan: '#94e2d5',
-        brightWhite: '#a6adc8',
+        background: '#000000',
+        foreground: '#f4f4f5',
+        cursor: '#ffffff',
+        selectionBackground: 'rgba(255, 255, 255, 0.2)',
+        black: '#27272a',
+        red: '#f87171',
+        green: '#4ade80',
+        yellow: '#facc15',
+        blue: '#60a5fa',
+        magenta: '#c084fc',
+        cyan: '#38bdf8',
+        white: '#ffffff',
+        brightBlack: '#52525b',
+        brightRed: '#fca5a5',
+        brightGreen: '#86efac',
+        brightYellow: '#fde047',
+        brightBlue: '#93c5fd',
+        brightMagenta: '#e879f9',
+        brightCyan: '#7dd3fc',
+        brightWhite: '#ffffff',
       },
       fontFamily: 'Fira Code, JetBrains Mono, Consolas, monospace',
       fontSize: 12,
@@ -96,21 +96,21 @@ export const TerminalDock: React.FC<TerminalDockProps> = ({ sessionId, dockPosit
   if (dockPosition === 'hidden') return null;
 
   const getContainerStyle = () => {
-    if (dockPosition === 'bottom') return 'h-64 w-full border-t border-[#313244]';
-    if (dockPosition === 'left') return 'h-full w-96 border-r border-[#313244]';
-    if (dockPosition === 'right') return 'h-full w-96 border-l border-[#313244]';
+    if (dockPosition === 'bottom') return 'h-64 w-full border-t border-white/[0.08]';
+    if (dockPosition === 'left') return 'h-full w-96 border-r border-white/[0.08]';
+    if (dockPosition === 'right') return 'h-full w-96 border-l border-white/[0.08]';
     if (dockPosition === 'float') {
-      return 'fixed bottom-8 right-8 w-[600px] h-[360px] rounded-xl shadow-2xl border border-[#89b4fa]/50 z-50 overflow-hidden';
+      return 'fixed bottom-8 right-8 w-[600px] h-[360px] rounded-2xl shadow-2xl border border-white/[0.15] z-50 overflow-hidden bg-[#000000]';
     }
     return 'h-64 w-full';
   };
 
   return (
-    <div className={`flex flex-col bg-[#181825] ${getContainerStyle()}`}>
-      <div className="flex justify-between items-center px-3 py-1.5 bg-[#11111b] text-xs text-gray-400 border-b border-[#313244] select-none">
+    <div className={`flex flex-col bg-[#000000] ${getContainerStyle()}`}>
+      <div className="flex justify-between items-center px-3 py-1.5 bg-[#09090b] text-xs text-zinc-400 border-b border-white/[0.08] select-none">
         <div className="flex items-center space-x-2">
-          <TermIcon size={13} className="text-[#89b4fa]" />
-          <span className="font-semibold text-gray-300">Terminal (Session: {sessionId.slice(-6)})</span>
+          <TermIcon size={13} className="text-zinc-300" />
+          <span className="font-semibold text-zinc-200">Terminal (Session: {sessionId.slice(-6)})</span>
         </div>
         <div className="flex items-center space-x-2 text-[11px]">
           <span className="text-gray-500 uppercase">{dockPosition}</span>
