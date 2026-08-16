@@ -6,15 +6,28 @@ import { MermaidBlock } from './renderers/MermaidBlock';
 import { MathBlock } from './renderers/MathBlock';
 import { SvgBlock } from './renderers/SvgBlock';
 import { DiffBlock } from './renderers/DiffBlock';
+import { PromptBar } from './PromptBar';
 import { Download, ListCollapse, BookOpen, Bot, User, Sparkles } from 'lucide-react';
 
 interface VisualCanvasProps {
   blocks: MarkdownBlock[];
   viewMode: 'chat' | 'document';
   rawText?: string;
+  onSendPrompt?: (text: string) => void;
+  onInterrupt?: () => void;
+  isStreaming?: boolean;
+  agentName?: string;
 }
 
-export const VisualCanvas: React.FC<VisualCanvasProps> = ({ blocks, viewMode, rawText = '' }) => {
+export const VisualCanvas: React.FC<VisualCanvasProps> = ({
+  blocks,
+  viewMode,
+  rawText = '',
+  onSendPrompt,
+  onInterrupt,
+  isStreaming = false,
+  agentName = 'Agent',
+}) => {
   const [showToc, setShowToc] = useState<boolean>(false);
 
   const headings = blocks.filter((b) => b.type === 'heading');
@@ -84,7 +97,7 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({ blocks, viewMode, ra
       {/* Main Canvas Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Quick Actions Header */}
-        <div className="flex justify-between items-center px-6 py-2.5 glass-panel border-b border-white/[0.08] text-xs">
+        <div className="flex justify-between items-center px-6 py-2.5 glass-panel border-b border-white/[0.08] text-xs select-none">
           <button
             onClick={() => setShowToc(!showToc)}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 ${
@@ -116,7 +129,7 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({ blocks, viewMode, ra
               <div className="space-y-1">
                 <h3 className="text-base font-semibold text-white">Live Markdown Stream Ready</h3>
                 <p className="text-xs max-w-sm text-[#71717a] leading-relaxed">
-                  Start typing in the terminal. Formatted text, syntax-highlighted code, LaTeX math, and Mermaid charts will appear here in real time.
+                  Start typing in the prompt bar below or the terminal. Formatted text, syntax-highlighted code, LaTeX math, and Mermaid charts will appear here in real time.
                 </p>
               </div>
             </div>
@@ -197,6 +210,16 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({ blocks, viewMode, ra
             })
           )}
         </div>
+
+        {/* Two-Way Floating Prompt Bar */}
+        {onSendPrompt && (
+          <PromptBar
+            onSend={onSendPrompt}
+            onInterrupt={onInterrupt || (() => {})}
+            isStreaming={isStreaming}
+            agentName={agentName}
+          />
+        )}
       </div>
     </div>
   );
