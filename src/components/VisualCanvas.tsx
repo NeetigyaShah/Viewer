@@ -6,7 +6,7 @@ import { MermaidBlock } from './renderers/MermaidBlock';
 import { MathBlock } from './renderers/MathBlock';
 import { SvgBlock } from './renderers/SvgBlock';
 import { DiffBlock } from './renderers/DiffBlock';
-import { Download, ListCollapse, BookOpen } from 'lucide-react';
+import { Download, ListCollapse, BookOpen, Bot, User, Sparkles } from 'lucide-react';
 
 interface VisualCanvasProps {
   blocks: MarkdownBlock[];
@@ -48,16 +48,16 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({ blocks, viewMode, ra
   };
 
   return (
-    <div className="flex-1 flex overflow-hidden bg-[#1e1e2e] text-[#cdd6f4] relative">
+    <div className="flex-1 flex overflow-hidden bg-[#09090b] text-[#f4f4f5] relative">
       {/* Table of Contents Sidebar */}
       {showToc && (
-        <div className="w-64 bg-[#181825] border-r border-[#313244] p-4 overflow-y-auto text-xs space-y-2 select-none shadow-xl z-20">
-          <div className="flex justify-between items-center pb-2 border-b border-[#313244] font-semibold text-[#89b4fa]">
+        <div className="w-64 glass-panel border-r border-white/[0.08] p-4 overflow-y-auto text-xs space-y-2 select-none shadow-2xl z-20 animate-fadeIn">
+          <div className="flex justify-between items-center pb-2 border-b border-white/[0.08] font-semibold text-[#89b4fa]">
             <span className="flex items-center space-x-1.5">
               <BookOpen size={14} />
               <span>Table of Contents</span>
             </span>
-            <button onClick={() => setShowToc(false)} className="text-gray-400 hover:text-white">
+            <button onClick={() => setShowToc(false)} className="text-gray-400 hover:text-white transition-colors">
               ✕
             </button>
           </div>
@@ -71,7 +71,7 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({ blocks, viewMode, ra
                 <div
                   key={i}
                   style={{ paddingLeft: `${(level - 1) * 12}px` }}
-                  className="truncate text-gray-300 hover:text-[#89b4fa] cursor-pointer py-0.5"
+                  className="truncate text-[#a1a1aa] hover:text-[#89b4fa] cursor-pointer py-1 transition-colors"
                 >
                   • {text}
                 </div>
@@ -81,14 +81,16 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({ blocks, viewMode, ra
         </div>
       )}
 
-      {/* Main Canvas Scroll Area */}
+      {/* Main Canvas Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Canvas Quick Actions */}
-        <div className="flex justify-between items-center px-6 py-2 bg-[#181825]/60 border-b border-[#313244]/60 text-xs">
+        {/* Quick Actions Header */}
+        <div className="flex justify-between items-center px-6 py-2.5 glass-panel border-b border-white/[0.08] text-xs">
           <button
             onClick={() => setShowToc(!showToc)}
-            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded transition-colors ${
-              showToc ? 'bg-[#89b4fa] text-[#11111b] font-semibold' : 'bg-[#313244] hover:bg-[#45475a] text-gray-200'
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 ${
+              showToc
+                ? 'bg-[#89b4fa] text-[#11111b] font-semibold shadow-md'
+                : 'bg-white/[0.04] hover:bg-white/[0.08] text-[#a1a1aa] hover:text-white border border-white/[0.06]'
             }`}
           >
             <ListCollapse size={13} />
@@ -97,7 +99,7 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({ blocks, viewMode, ra
 
           <button
             onClick={handleExportMarkdown}
-            className="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-[#313244] hover:bg-[#45475a] text-gray-200 transition-colors"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-[#a1a1aa] hover:text-white border border-white/[0.06] transition-all duration-200"
           >
             <Download size={13} />
             <span>Export .MD</span>
@@ -105,19 +107,23 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({ blocks, viewMode, ra
         </div>
 
         {/* Content Stream */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-4 max-w-4xl mx-auto w-full">
+        <div className="flex-1 overflow-y-auto p-8 space-y-6 max-w-4xl mx-auto w-full">
           {blocks.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center p-12 text-gray-500 space-y-3">
-              <div className="p-4 rounded-full bg-[#181825] border border-[#313244] text-[#89b4fa]">
-                <BookOpen size={32} />
+            <div className="h-full flex flex-col items-center justify-center text-center p-12 text-gray-500 space-y-4">
+              <div className="p-4 rounded-2xl glass-panel border border-white/[0.08] text-[#89b4fa] shadow-xl">
+                <Sparkles size={32} className="text-[#89b4fa]" />
               </div>
-              <h3 className="text-base font-semibold text-gray-400">Waiting for agent output...</h3>
-              <p className="text-xs max-w-sm text-gray-500">
-                Type commands in the terminal pane to interact with the agent. Markdown, code, diagrams, and formulas will render live here.
-              </p>
+              <div className="space-y-1">
+                <h3 className="text-base font-semibold text-white">Live Markdown Stream Ready</h3>
+                <p className="text-xs max-w-sm text-[#71717a] leading-relaxed">
+                  Start typing in the terminal. Formatted text, syntax-highlighted code, LaTeX math, and Mermaid charts will appear here in real time.
+                </p>
+              </div>
             </div>
           ) : (
-            blocks.map((block) => {
+            blocks.map((block, index) => {
+              const isLast = index === blocks.length - 1;
+
               if (block.type === 'code') {
                 if (block.lang === 'mermaid') {
                   const cleanCode = block.rawContent.replace(/^```mermaid\n?/, '').replace(/```$/, '');
@@ -152,20 +158,20 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({ blocks, viewMode, ra
                 const text = block.rawContent.replace(/^#+\s*/, '');
                 if (level === 1) {
                   return (
-                    <h1 key={block.id} className="text-2xl font-bold text-[#89b4fa] border-b border-[#313244] pb-2 mt-6 mb-3">
+                    <h1 key={block.id} className="text-3xl font-extrabold text-white tracking-tight border-b border-white/[0.08] pb-3 mt-8 mb-4">
                       {renderColoredText(text)}
                     </h1>
                   );
                 }
                 if (level === 2) {
                   return (
-                    <h2 key={block.id} className="text-xl font-semibold text-[#89b4fa] mt-5 mb-2">
+                    <h2 key={block.id} className="text-xl font-bold text-[#89b4fa] mt-6 mb-3">
                       {renderColoredText(text)}
                     </h2>
                   );
                 }
                 return (
-                  <h3 key={block.id} className="text-lg font-medium text-[#cba6f7] mt-4 mb-1">
+                  <h3 key={block.id} className="text-base font-semibold text-[#cba6f7] mt-4 mb-2">
                     {renderColoredText(text)}
                   </h3>
                 );
@@ -178,11 +184,14 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({ blocks, viewMode, ra
                   key={block.id}
                   className={
                     isChat
-                      ? 'p-4 bg-[#181825] rounded-xl border border-[#313244] shadow-sm leading-relaxed text-sm'
-                      : 'leading-relaxed text-sm my-2'
+                      ? 'p-5 rounded-2xl glass-panel border border-white/[0.08] shadow-sm leading-relaxed text-sm'
+                      : 'leading-relaxed text-sm my-3'
                   }
                 >
-                  <p className="whitespace-pre-wrap leading-relaxed">{renderColoredText(block.rawContent)}</p>
+                  <p className="whitespace-pre-wrap leading-relaxed text-[#f4f4f5]">
+                    {renderColoredText(block.rawContent)}
+                    {isLast && !block.isComplete && <span className="streaming-cursor" />}
+                  </p>
                 </div>
               );
             })
