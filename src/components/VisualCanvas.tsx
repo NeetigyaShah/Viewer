@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MarkdownBlock } from '../engine/types';
 import { tokenizeAnsi } from '../engine/ansiTokenizer';
@@ -9,12 +9,14 @@ import { SvgBlock } from './renderers/SvgBlock';
 import { DiffBlock } from './renderers/DiffBlock';
 import { ThinkingBlock } from './renderers/ThinkingBlock';
 import { PromptBar } from './PromptBar';
-import { Download, ListCollapse, BookOpen, Sparkles, Wrench, Search, FileCode } from 'lucide-react';
+import { BookOpen, Sparkles, Wrench, Search, FileCode } from 'lucide-react';
 
 interface VisualCanvasProps {
   blocks: MarkdownBlock[];
   viewMode: 'chat' | 'document';
   rawText?: string;
+  showToc: boolean;
+  onToggleToc: () => void;
   onSendPrompt?: (text: string) => void;
   onInterrupt?: () => void;
   isStreaming?: boolean;
@@ -25,24 +27,14 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({
   blocks,
   viewMode,
   rawText = '',
+  showToc,
+  onToggleToc,
   onSendPrompt,
   onInterrupt,
   isStreaming = false,
   agentName = 'Agent',
 }) => {
-  const [showToc, setShowToc] = useState<boolean>(false);
-
   const headings = blocks.filter((b) => b.type === 'heading');
-
-  const handleExportMarkdown = () => {
-    const blob = new Blob([rawText], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `agent-session-${Date.now()}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   const renderColoredText = (text: string) => {
     const tokens = tokenizeAnsi(text);
@@ -63,10 +55,30 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({
   };
 
   const starterCards = [
-    { title: 'Explain Architecture', desc: 'Summarize the structure and data flow of this project', prompt: 'Explain the architecture and codebase structure of this repository in detail', icon: <Sparkles size={16} className="text-zinc-400" /> },
-    { title: 'Run Tests & Fix Errors', desc: 'Execute the test suite and resolve any breaking issues', prompt: 'Run the test suite and fix any failing errors step-by-step', icon: <Wrench size={16} className="text-zinc-400" /> },
-    { title: 'Search & Inspect Code', desc: 'Find key components, functions, or patterns', prompt: 'Search the codebase for all major entrypoints and list them', icon: <Search size={16} className="text-zinc-400" /> },
-    { title: 'Plan New Feature', desc: 'Draft an implementation plan with test-driven steps', prompt: 'Draft a comprehensive implementation plan for adding a new feature', icon: <FileCode size={16} className="text-zinc-400" /> },
+    {
+      title: 'Explain Architecture',
+      desc: 'Summarize the structure and data flow of this project',
+      prompt: 'Explain the architecture and codebase structure of this repository in detail',
+      icon: <Sparkles size={16} className="text-zinc-400" />,
+    },
+    {
+      title: 'Run Tests & Fix Errors',
+      desc: 'Execute the test suite and resolve any breaking issues',
+      prompt: 'Run the test suite and fix any failing errors step-by-step',
+      icon: <Wrench size={16} className="text-zinc-400" />,
+    },
+    {
+      title: 'Search & Inspect Code',
+      desc: 'Find key components, functions, or patterns',
+      prompt: 'Search the codebase for all major entrypoints and list them',
+      icon: <Search size={16} className="text-zinc-400" />,
+    },
+    {
+      title: 'Plan New Feature',
+      desc: 'Draft an implementation plan with test-driven steps',
+      prompt: 'Draft a comprehensive implementation plan for adding a new feature',
+      icon: <FileCode size={16} className="text-zinc-400" />,
+    },
   ];
 
   return (
@@ -87,7 +99,7 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({
                 <span>Table of Contents</span>
               </span>
               <button
-                onClick={() => setShowToc(false)}
+                onClick={onToggleToc}
                 className="text-zinc-400 hover:text-white p-1 rounded hover:bg-white/[0.06] transition-colors cursor-pointer"
               >
                 ✕
@@ -116,35 +128,6 @@ export const VisualCanvas: React.FC<VisualCanvasProps> = ({
 
       {/* Main Canvas Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Quick Actions Header */}
-        <div className="flex justify-between items-center px-6 py-2 glass-panel border-b border-white/[0.08] text-xs select-none">
-          <div className="flex items-center space-x-2">
-            <motion.button
-              whileHover={{ y: -1 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => setShowToc(!showToc)}
-              className={`btn-tactile flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 cursor-pointer ${
-                showToc
-                  ? 'bg-white text-black font-semibold shadow-md'
-                  : 'bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.06]'
-              }`}
-            >
-              <ListCollapse size={13} />
-              <span>TOC ({headings.length})</span>
-            </motion.button>
-          </div>
-
-          <motion.button
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.96 }}
-            onClick={handleExportMarkdown}
-            className="btn-tactile flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.06] transition-all duration-150 cursor-pointer"
-          >
-            <Download size={13} />
-            <span>Export .MD</span>
-          </motion.button>
-        </div>
-
         {/* Content Stream */}
         <div className="flex-1 overflow-y-auto p-8 space-y-6 max-w-4xl mx-auto w-full">
           {blocks.length === 0 ? (

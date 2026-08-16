@@ -10,7 +10,17 @@ import { WorkspaceLauncher } from './components/WorkspaceLauncher';
 import { HistoryDrawer } from './components/HistoryDrawer';
 import { TerminalDock } from './components/TerminalDock';
 import { VisualCanvas } from './components/VisualCanvas';
-import { PanelBottom, PanelLeft, PanelRight, Maximize2, EyeOff, MessageSquare, FileText } from 'lucide-react';
+import {
+  PanelBottom,
+  PanelLeft,
+  PanelRight,
+  Maximize2,
+  EyeOff,
+  MessageSquare,
+  FileText,
+  ListCollapse,
+  Download,
+} from 'lucide-react';
 import './styles/theme.css';
 
 export function App() {
@@ -26,6 +36,7 @@ export function App() {
   const [activeTabId, setActiveTabId] = useState<string>('');
   const [dockPosition, setDockPosition] = useState<DockPosition>('bottom');
   const [viewMode, setViewMode] = useState<ViewMode>('chat');
+  const [showToc, setShowToc] = useState<boolean>(false);
 
   // Per-Tab Buffers & Markdown Blocks
   const [buffers, setBuffers] = useState<Record<string, BlockStreamBuffer>>({});
@@ -147,6 +158,18 @@ export function App() {
     ptyClient.writePty(activeTabId, '\x03');
   };
 
+  const handleExportCurrentMarkdown = () => {
+    const buf = buffers[activeTabId];
+    const text = buf ? buf.getText() : '';
+    const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `session-${activeTabId.slice(-6)}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleCloseTab = (id: string) => {
     ptyClient.killPty(id);
     setTabs((prev) => {
@@ -160,6 +183,7 @@ export function App() {
   };
 
   const currentTab = tabs.find((t) => t.id === activeTabId);
+  const currentHeadings = (blocks[activeTabId] || []).filter((b) => b.type === 'heading');
 
   return (
     <div className="h-screen w-screen flex bg-[#000000] text-[#f4f4f5] overflow-hidden select-none">
@@ -281,9 +305,9 @@ export function App() {
                 </motion.div>
               ) : (
                 <div className="flex-1 flex flex-col overflow-hidden">
-                  {/* Workspace Top Toolbar */}
+                  {/* Single Unified Workspace Header */}
                   <div className="flex justify-between items-center px-6 py-2 glass-panel border-b border-white/[0.08] text-xs">
-                    {/* Sleek Segmented View Switcher */}
+                    {/* Left: Mode Switcher */}
                     <div className="flex items-center space-x-1 bg-[#121215] p-1 rounded-xl border border-white/[0.08]">
                       <motion.button
                         whileTap={{ scale: 0.96 }}
@@ -312,31 +336,59 @@ export function App() {
                       </motion.button>
                     </div>
 
-                    {/* Terminal Dock Controls */}
-                    <div className="flex items-center space-x-1 glass-panel p-1 rounded-xl border border-white/[0.08]">
-                      <span className="text-[11px] text-zinc-500 px-2 font-medium">Terminal:</span>
-                      {(
-                        [
-                          { pos: 'bottom', title: 'Dock Bottom', icon: <PanelBottom size={13} /> },
-                          { pos: 'left', title: 'Dock Left', icon: <PanelLeft size={13} /> },
-                          { pos: 'right', title: 'Dock Right', icon: <PanelRight size={13} /> },
-                          { pos: 'float', title: 'Floating Window', icon: <Maximize2 size={13} /> },
-                          { pos: 'hidden', title: 'Hide Terminal', icon: <EyeOff size={13} /> },
-                        ] as const
-                      ).map(({ pos, title, icon }) => (
-                        <motion.button
-                          key={pos}
-                          whileHover={{ scale: 1.08 }}
-                          whileTap={{ scale: 0.92 }}
-                          onClick={() => setDockPosition(pos)}
-                          title={title}
-                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                            dockPosition === pos ? 'bg-white text-black font-bold shadow-sm' : 'text-zinc-400 hover:text-white'
-                          }`}
-                        >
-                          {icon}
-                        </motion.button>
-                      ))}
+                    {/* Right: TOC, Export & Terminal Controls in ONE unified row */}
+                    <div className="flex items-center space-x-2">
+                      <motion.button
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => setShowToc(!showToc)}
+                        className={`btn-tactile flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 cursor-pointer ${
+                          showToc
+                            ? 'bg-white text-black font-semibold shadow-sm'
+                            : 'bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.06]'
+                        }`}
+                      >
+                        <ListCollapse size={13} />
+                        <span>TOC ({currentHeadings.length})</span>
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={handleExportCurrentMarkdown}
+                        className="btn-tactile flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.06] transition-all duration-150 cursor-pointer"
+                      >
+                        <Download size={13} />
+                        <span>Export .MD</span>
+                      </motion.button>
+
+                      <div className="h-4 w-px bg-white/[0.1] mx-1" />
+
+                      <div className="flex items-center space-x-1 glass-panel p-1 rounded-xl border border-white/[0.08]">
+                        <span className="text-[11px] text-zinc-500 px-1.5 font-medium">Terminal:</span>
+                        {(
+                          [
+                            { pos: 'bottom', title: 'Dock Bottom', icon: <PanelBottom size={13} /> },
+                            { pos: 'left', title: 'Dock Left', icon: <PanelLeft size={13} /> },
+                            { pos: 'right', title: 'Dock Right', icon: <PanelRight size={13} /> },
+                            { pos: 'float', title: 'Floating Window', icon: <Maximize2 size={13} /> },
+                            { pos: 'hidden', title: 'Hide Terminal', icon: <EyeOff size={13} /> },
+                          ] as const
+                        ).map(({ pos, title, icon }) => (
+                          <motion.button
+                            key={pos}
+                            whileHover={{ scale: 1.08 }}
+                            whileTap={{ scale: 0.92 }}
+                            onClick={() => setDockPosition(pos)}
+                            title={title}
+                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                              dockPosition === pos ? 'bg-white text-black font-bold shadow-sm' : 'text-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            {icon}
+                          </motion.button>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -354,6 +406,8 @@ export function App() {
                       blocks={blocks[activeTabId] || []}
                       viewMode={viewMode}
                       rawText={buffers[activeTabId]?.getText() || ''}
+                      showToc={showToc}
+                      onToggleToc={() => setShowToc(!showToc)}
                       onSendPrompt={handleSendPrompt}
                       onInterrupt={handleInterrupt}
                       agentName={currentTab?.title.split(' (')[0] || 'Agent'}
